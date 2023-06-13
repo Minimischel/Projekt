@@ -19,10 +19,14 @@
   <div class="table3"></div>
   <h3 class="title tag">Erledigt am 10.05.23</h3>
   <div class="table4"></div>
+  <h3 class="title">Unerledigte To-Do's</h3>
+  <div class="table5"></div>
+  <canvas class="diagram" width="100" height="100"></canvas>
+
 
   <script>
     //Javascript-Code hier
-    query(`SELECT description, deadline FROM "users" INNER JOIN "todos" ON users.id = todos.user_id WHERE name LIKE 'Annika%'`, data => {
+    query(`SELECT description, deadline FROM "users" INNER JOIN "todos" ON users.id = todos.user_id WHERE name LIKE 'Annika%' ORDER BY deadline ASC`, data => {
       const headers = Object.keys(data[0])
       let t = "<table>"
       for(const dat of data) {
@@ -77,6 +81,42 @@
       t += `</table>`
       document.querySelector('.table4').innerHTML = t;
     });
+
+    query(`SELECT name, description, deadline FROM "public"."users" INNER JOIN "todos" ON users.id = todos.user_id WHERE completed_at IS NULL ORDER BY name, deadline`, data => {
+    const headers = Object.keys(data[0])
+      let t = "<table>"
+      for(const dat of data) {
+        t += `<tr>`
+        for(const col of headers) {
+          t += `<td>${dat[col]}</td>`
+        }
+        t += `</tr>`
+      }
+      t += `</table>`
+      document.querySelector('.table5').innerHTML = t;
+    });
+
+    query(`SELECT COUNT(todos.id) AS tasks, completed_at FROM "public"."todos" INNER JOIN "users" ON todos.user_id = users.id WHERE completed_at IS NOT NULL AND name LIKE 'Annika%' GROUP BY completed_at ORDER BY completed_at ASC`, data => {
+    const ctx = document.querySelector('.diagram').getContext('2d');
+    const myChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: extract(data, 'completed_at'),
+        datasets: [{
+          label: 'Erledigte Tasks Annika',
+          data: extract(data, 'tasks'),
+          backgroundColor: 'rgb(75, 192, 192)'
+        }],
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  });
 
   </script>
 </body>
